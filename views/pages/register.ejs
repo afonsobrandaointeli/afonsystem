@@ -1,0 +1,94 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+
+<div class="container mt-5">
+  <h2>Cadastro de Daily</h2>
+  <form id="usuarioForm" action="/register" method="POST">
+    <div class="mb-3">
+      <label for="email" class="form-label">Email:</label>
+      <input type="email" class="form-control" id="email" name="email" required>
+    </div>
+    <div class="mb-3">
+      <label for="turma" class="form-label">Turma:</label>
+      <select class="form-select" id="turma" name="turma" required>
+        <option value="">Selecione a turma</option>
+        <option value="T01">T01</option>
+        <option value="T02">T02</option>
+        <option value="T03">T03</option>
+        <option value="T04">T04</option>
+        <option value="T05">T05</option>
+        <option value="T06">T06</option>
+        <option value="T07">T07</option>
+        <option value="T08">T08</option>
+        <option value="T09">T09</option>
+        <option value="T10">T10</option>
+        <option value="T11">T11</option>
+        <option value="T12">T12</option>
+        <option value="T13">T13</option>
+        <option value="T14">T14</option>
+        </select>
+    </div>
+    <div class="mb-3">
+      <label for="turma" class="form-label">Grupo:</label>
+      <select class="form-select" id="grupo" name="grupo" required>
+        <option value="">Selecione a turma</option>
+        <option value="G01">G1</option>
+        <option value="G02">G2</option>
+        <option value="G03">G3</option>
+        <option value="G04">G4</option>
+        <option value="G05">G5</option>
+        <option value="G06">G6</option>
+        <option value="G07">G7</option>
+        <option value="G08">G8</option>
+        </select>
+    </div>
+    <div class="mb-3">
+      <label for="impedimento" class="form-label">Impedimento:</label>
+      <textarea class="form-control" id="impedimento" name="impedimento"></textarea>
+    </div>
+    <div class="mb-3">
+      <label for="grooming" class="form-label">Grooming:</label>
+      <textarea class="form-control" id="grooming" name="grooming"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary mb-5">Cadastrar</button>
+  </form>
+</div>
+
+<script>
+  const usuarioForm = document.getElementById('usuarioForm');
+  usuarioForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const emailInput = document.getElementById('email');
+    const email = emailInput.value;
+
+    const emailRegex = /@sou\.inteli\.edu\.br$/; 
+    if (!emailRegex.test(email)) {
+      alert('Por favor, insira um email válido do Inteli (@sou.inteli.edu.br).');
+      return;
+    }
+
+    const formData = new FormData(usuarioForm);
+    const dadosUsuario = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch('/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dadosUsuario)
+      });
+
+    if (response.status === 201) {
+      const dailyCriada = await response.json();
+      alert('Registro realizado com sucesso!');
+      usuarioForm.reset();
+    } else {
+      const errorData = await response.json();
+      alert(`Erro: ${errorData.message || 'Ocorreu um erro ao criar a daily'}`);
+    }
+    } catch (error) {
+      alert('Erro na requisição: ' + error.message);
+    }
+  });
+</script>

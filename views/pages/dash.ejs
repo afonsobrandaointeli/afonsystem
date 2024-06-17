@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Dashboard</h1>
+        <table id="registers-table" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Turma</th>
+                    <th>Grupo</th>
+                    <th>Impedimento</th>
+                    <th>Grooming</th>
+                </tr>
+            </thead>
+            <tbody id="registers-table-body">
+                <!-- Dados serão inseridos aqui -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        async function fetchRegisters() {
+            try {
+                const response = await fetch('/register');
+                const registers = await response.json();
+
+                const tableBody = document.getElementById('registers-table-body');
+                tableBody.innerHTML = '';
+
+                registers.forEach(register => {
+                    const row = document.createElement('tr');
+
+                    const emailCell = document.createElement('td');
+                    emailCell.textContent = register.email;
+                    row.appendChild(emailCell);
+
+                    const turmaCell = document.createElement('td');
+                    turmaCell.textContent = register.turma;
+                    row.appendChild(turmaCell);
+
+                    const grupoCell = document.createElement('td');
+                    grupoCell.textContent = register.grupo;
+                    row.appendChild(grupoCell);
+
+                    const impedimentoCell = document.createElement('td');
+                    impedimentoCell.textContent = register.impedimento || '';
+                    row.appendChild(impedimentoCell);
+
+                    const groomingCell = document.createElement('td');
+                    groomingCell.textContent = register.grooming || '';
+                    row.appendChild(groomingCell);
+
+                    tableBody.appendChild(row);
+                });
+
+                // Inicializa DataTables
+                $('#registers-table').DataTable({
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/Portuguese-Brasil.json'
+                    }
+                });
+            } catch (error) {
+                console.error('Erro ao buscar os registros:', error);
+            }
+        }
+
+        // Chama a função para buscar e exibir os registros quando a página carrega
+        window.onload = fetchRegisters;
+    </script>
+</body>
+</html>
