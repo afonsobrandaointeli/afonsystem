@@ -1,26 +1,62 @@
-# getdailies
+Descrição do Projeto
+--------------------
 
-a [Sails v1](https://sailsjs.com) application
+O objetivo deste projeto é facilitar o registro e a análise das dailies dos alunos, permitindo que as equipes docentes e os próprios alunos possam monitorar o progresso e identificar eventuais impedimentos nas atividades acadêmicas.
 
+### Funcionalidades
 
-### Links
+* Registro de dailies dos alunos, incluindo informações como turma, grupo, impedimento e grooming.
+* Visualização de registros em tabelas filtráveis e ordenáveis.
+* Geração de gráficos para análise de dados por turma e por aluno.
+* CRUD básico para manipulação de dados.
 
-+ [Sails framework documentation](https://sailsjs.com/get-started)
-+ [Version notes / upgrading](https://sailsjs.com/documentation/upgrading)
-+ [Deployment tips](https://sailsjs.com/documentation/concepts/deployment)
-+ [Community support options](https://sailsjs.com/support)
-+ [Professional / enterprise options](https://sailsjs.com/enterprise)
+Requisitos
+----------
 
+* Node.js
+* Sails.js
+* Banco de dados relacional
 
-### Version info
+Instalação
+----------
 
-This app was originally generated on Mon Jun 17 2024 16:54:32 GMT-0300 (Horário Padrão de Brasília) using Sails v1.5.9.
+1. Clone o repositório para sua máquina local:
+    
+    ```bash
+    git clone https://github.com/seu-usuario/nome-do-repositorio.git
+    ```
+    
+2. Instale as dependências npm:
+    
+    ```bash
+    cd nome-do-repositorio
+    npm install
+    ```
+    
+3. Configure as variáveis de ambiente necessárias, como credenciais do banco de dados, em `config/datastores.js` e `config/env/production.js` (ou `config/env/development.js` para ambiente de desenvolvimento).
+    
+4. Inicie o servidor Sails:
+    
+    ```
+    sails lift
+    ```
+    
+5. Acesse o aplicativo em seu navegador:
+    
+    ```bash
+    http://localhost:1337
+    ```
+    
 
-<!-- Internally, Sails used [`sails-generate@2.0.9`](https://github.com/balderdashy/sails-generate/tree/v2.0.9/lib/core-generators/new). -->
+Uso
+---
 
+* **Registro de Dailies:** Utilize a página de registro para inserir os dados das dailies dos alunos.
+* **Visualização:** Acesse a página de dashboard para visualizar tabelas e gráficos com os registros das dailies.
+* **Filtragem e Ordenação:** Utilize os controles na interface para filtrar e ordenar os dados conforme necessário.
+* **Gráficos:** Visualize gráficos que mostram quantas dailies foram registradas por turma e detalhes por aluno.
 
+Contribuições
+-------------
 
-<!--
-Note:  Generators are usually run using the globally-installed `sails` CLI (command-line interface).  This CLI version is _environment-specific_ rather than app-specific, thus over time, as a project's dependencies are upgraded or the project is worked on by different developers on different computers using different versions of Node.js, the Sails dependency in its package.json file may differ from the globally-installed Sails CLI release it was originally generated with.  (Be sure to always check out the relevant [upgrading guides](https://sailsjs.com/upgrading) before upgrading the version of Sails used by your app.  If you're stuck, [get help here](https://sailsjs.com/support).)
--->
-
+Contribuições são bem-vindas! Sinta-se à vontade para enviar pull requests com melhorias, correções de bugs ou novas funcionalidades.
