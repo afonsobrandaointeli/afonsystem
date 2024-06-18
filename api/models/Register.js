@@ -1,35 +1,27 @@
 module.exports = {
   attributes: {
     email: {
-      type: 'string',
+      type: "string",
       required: true,
-      isEmail: true
+      isEmail: true,
     },
     turma: {
-      type: 'string',
+      type: "string",
       required: true,
-      enum: [
-        'T01', 'T02', 'T03', 'T04', 'T05', 
-        'T06', 'T07', 'T08', 'T09', 'T10', 
-        'T11', 'T12', 'T13', 'T14'
-      ]
+      enum: ["T11", "T12", "T13", "T14"],
     },
     grupo: {
-      type: 'string',
+      type: "string",
       required: true,
-      enum: [
-        'G01', 'G02', 'G03', 'G04', 'G05',
-        'G06', 'G07', 'G08'
-      ]
+      enum: ["G01", "G02", "G03", "G04", "G05", "G06", "G07", "G08"],
     },
     impedimento: {
-      type: 'string',
-      allowNull: true
+      type: "string",
+      allowNull: true,
     },
     grooming: {
-      type: 'string',
-      allowNull: true
-    }
+      type: "string",
+      allowNull: true,
+    },
   },
 };
-

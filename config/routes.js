@@ -1,7 +1,6 @@
 module.exports.routes = {
   "/": { view: "pages/register" },
   "/data": { view: "pages/dash" },
-  "/charts": { view: "pages/charts" },
   "/commits": { view: "pages/commits" },
   "/prs": { view: "pages/prs" },
   "POST /register": "RegistersController.create",
