@@ -1,11 +1,11 @@
-require('dotenv').config();
+require("dotenv").config();
 
 module.exports.datastores = {
   default: {
-    adapter: 'sails-postgresql',
+    adapter: "sails-postgresql",
     url: process.env.DATABASE_URL,
     ssl: {
-      rejectUnauthorized: false
-    }
+      rejectUnauthorized: false,
+    },
   },
 };
