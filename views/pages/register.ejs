@@ -11,16 +11,6 @@
       <label for="turma" class="form-label">Turma:</label>
       <select class="form-select" id="turma" name="turma" required>
         <option value="">Selecione a turma</option>
-        <option value="T01">T01</option>
-        <option value="T02">T02</option>
-        <option value="T03">T03</option>
-        <option value="T04">T04</option>
-        <option value="T05">T05</option>
-        <option value="T06">T06</option>
-        <option value="T07">T07</option>
-        <option value="T08">T08</option>
-        <option value="T09">T09</option>
-        <option value="T10">T10</option>
         <option value="T11">T11</option>
         <option value="T12">T12</option>
         <option value="T13">T13</option>
@@ -61,7 +51,7 @@
     const emailInput = document.getElementById('email');
     const email = emailInput.value;
 
-    const emailRegex = /@sou\.inteli\.edu\.br$/; 
+    const emailRegex = /@sou\.inteli\.edu\.br$/;
     if (!emailRegex.test(email)) {
       alert('Por favor, insira um email válido do Inteli (@sou.inteli.edu.br).');
       return;

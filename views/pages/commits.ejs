@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exemplo de Integração com Sails</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <div class="container mt-5">
+    <h1>Relatório de Commits</h1>
+
+    <!-- Dropdown para seleção de repositório -->
+    <div class="mb-3">
+      <label for="repoSelect" class="form-label">Selecione um repositório:</label>
+      <select id="repoSelect" class="form-select">
+        <option value="" selected disabled>Selecione um repositório...</option>
+      </select>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+      <div class="col-md-6 mb-4">
+        <h3>Docs por Autor</h3>
+        <canvas id="docsChart"></canvas>
+      </div>
+      <div class="col-md-6 mb-4">
+        <h3>Feats por Autor</h3>
+        <canvas id="featsChart"></canvas>
+      </div>
+      <div class="col-md-6 mb-4">
+        <h3>Tests por Autor</h3>
+        <canvas id="testsChart"></canvas>
+      </div>
+      <div class="col-md-6 mb-4">
+        <h3>Fixes por Autor</h3>
+        <canvas id="fixesChart"></canvas>
+      </div>
+      <div class="col-md-12">
+        <canvas id="stackedChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mt-5">
+    <h2>Dados do Repositório</h2>
+
+    <div class="row">
+      <div class="col-md-3 mb-4">
+        <div class="card bg-primary text-white text-center p-3">
+          <h3>Feats</h3>
+          <h1 id="featsKpi">0</h1>
+        </div>
+      </div>
+      <div class="col-md-3 mb-4">
+        <div class="card bg-success text-white text-center p-3">
+          <h3>Merges</h3>
+          <h1 id="mergesKpi">0</h1>
+        </div>
+      </div>
+      <div class="col-md-3 mb-4">
+        <div class="card bg-info text-white text-center p-3">
+          <h3>Docs</h3>
+          <h1 id="docsKpi">0</h1>
+        </div>
+      </div>
+      <div class="col-md-3 mb-4">
+        <div class="card bg-warning text-dark text-center p-3">
+          <h3>Commits</h3>
+          <h1 id="commitsKpi">0</h1>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-group mb-3">
+      <input type="text" id="searchInput" class="form-control" placeholder="Pesquisar por mensagem...">
+      <button class="btn btn-outline-primary" type="button" id="searchButton">Pesquisar</button>
+    </div>
+
+    <div class="input-group mb-3">
+      <input type="text" id="authorInput" class="form-control" placeholder="Filtrar por autor...">
+      <button class="btn btn-outline-primary" type="button" id="filterButton">Filtrar</button>
+    </div>
+
+
+    <div class="table-responsive mb-5">
+      <table id="commitTable" class="table table-striped table-bordered">
+        <thead class="table-dark">
+          <tr>
+            <th>Mensagem</th>
+            <th>Data</th>
+            <th>Alterado por</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Linhas de commits serão adicionadas dinamicamente aqui -->
+        </tbody>
+      </table>
+    </div>
+
+  <!-- Bootstrap JS (opcional, se necessário) -->
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const repoSelect = document.getElementById('repoSelect');
+      const docsChart = document.getElementById('docsChart');
+      const featsChart = document.getElementById('featsChart');
+      const testsChart = document.getElementById('testsChart');
+      const fixesChart = document.getElementById('fixesChart');
+      const stackedChart = document.getElementById('stackedChart');
+
+      // Evento de clique no botão de pesquisa
+      document.getElementById('searchButton').addEventListener('click', function () {
+        const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
+        const authorText = document.getElementById('authorInput').value.trim().toLowerCase();
+
+        filterCommits(searchText, authorText);
+      });
+
+      // Evento de clique no botão de filtro
+      document.getElementById('filterButton').addEventListener('click', function () {
+        const authorText = document.getElementById('authorInput').value.trim().toLowerCase();
+
+        filterCommits('', authorText);
+      });
+
+      // Função para filtrar os commits na tabela
+      function filterCommits(searchText, authorText) {
+        const commitRows = document.querySelectorAll('#commitTable tbody tr');
+
+        commitRows.forEach(row => {
+          const messageCell = row.querySelector('td:nth-child(1)');
+          const messageText = messageCell.textContent.trim().toLowerCase();
+          const authorCell = row.querySelector('td:nth-child(3)');
+          const author = authorCell.textContent.trim().toLowerCase();
+
+          // Verifica se a mensagem e autor correspondem aos critérios de filtro
+          const messageMatch = messageText.includes(searchText) || searchText === '';
+          const authorMatch = author.includes(authorText) || authorText === '';
+
+          if (messageMatch && authorMatch) {
+            row.style.display = ''; // Exibe a linha se todos os critérios forem correspondidos
+          } else {
+            row.style.display = 'none'; // Oculta a linha se algum critério não for correspondido
+          }
+        });
+      }
+
+
+
+      // Função para verificar se a data está no intervalo especificado
+      function isDateInRange(commitDate, filterDate) {
+        if (!filterDate) return true; // Retorna verdadeiro se nenhum filtro de data estiver especificado
+
+        const commitDateObj = new Date(commitDate);
+        const filterDateObj = new Date(filterDate);
+
+        // Compara apenas a data, ignorando a hora, minutos, segundos e milissegundos
+        return (
+          commitDateObj.getFullYear() === filterDateObj.getFullYear() &&
+          commitDateObj.getMonth() === filterDateObj.getMonth() &&
+          commitDateObj.getDate() === filterDateObj.getDate()
+        );
+      }
+
+
+
+
+      // Função para carregar os repositórios disponíveis
+      async function loadRepoNames() {
+        try {
+          const response = await fetch('/repo_names');
+          const data = await response.json();
+
+          if (data.rows && data.rows.length > 0) {
+            const repoNames = data.rows.map(row => row.repo_name);
+
+            // Atualiza a lista de repositórios no dropdown
+            repoSelect.innerHTML = ''; // Limpa as opções existentes
+
+            repoNames.forEach(repo => {
+              const option = document.createElement('option');
+              option.textContent = repo;
+              option.value = repo;
+              repoSelect.appendChild(option);
+            });
+          } else {
+            console.log('Nenhum repositório encontrado.');
+          }
+        } catch (error) {
+          console.error('Erro ao carregar repositórios:', error);
+        }
+      }
+
+      // Função para carregar os commits para um repositório específico
+      async function loadCommits(repoName) {
+        try {
+          const headers = new Headers();
+          headers.append('repo_name', repoName); // Passa o repo_name como cabeçalho
+
+          const response = await fetch('/getcommits', {
+            method: 'GET',
+            headers: headers
+          });
+          const data = await response.json();
+
+          const commitTableBody = document.querySelector('#commitTable tbody');
+          commitTableBody.innerHTML = ''; // Limpa as linhas existentes
+
+          if (data.rows && data.rows.length > 0) {
+            // Atualizar KPIs
+            const featsCount = data.rows.filter(commit => commit.message.toLowerCase().startsWith('feat')).length;
+            const mergesCount = data.rows.filter(commit => commit.message.toLowerCase().startsWith('merge')).length;
+            const docsCount = data.rows.filter(commit => commit.message.toLowerCase().startsWith('docs')).length;
+            const commitsCount = data.rows.length;
+
+            document.getElementById('featsKpi').textContent = featsCount.toString();
+            document.getElementById('mergesKpi').textContent = mergesCount.toString();
+            document.getElementById('docsKpi').textContent = docsCount.toString();
+            document.getElementById('commitsKpi').textContent = commitsCount.toString();
+
+            // Adicionar linhas de commits na tabela
+            data.rows.forEach(commit => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+              <td>${commit.message}</td>
+              <td>${new Date(commit.date).toLocaleDateString('pt-BR')}</td>
+              <td>${commit.author}</td>
+            `;
+              commitTableBody.appendChild(row);
+            });
+
+            // Gerar gráficos
+            generateCharts(data.rows);
+          } else {
+            console.log('Nenhum commit encontrado para este repositório.');
+            // Limpar gráficos caso não haja commits
+            clearCharts();
+          }
+        } catch (error) {
+          console.error('Erro ao carregar commits:', error);
+        }
+      }
+
+      // Função para gerar os gráficos com os dados dos commits
+      function generateCharts(commits) {
+        const authors = {};
+
+        // Inicializa o objeto de autores
+        commits.forEach(commit => {
+          if (!authors[commit.author]) {
+            authors[commit.author] = {
+              docs: 0,
+              feats: 0,
+              tests: 0,
+              fixes: 0,
+              merges: 0  // Inicializa o contador de merges
+            };
+          }
+        });
+
+        // Conta o número de commits por tipo para cada autor
+        commits.forEach(commit => {
+          if (authors[commit.author]) {
+            if (commit.message.toLowerCase().startsWith('fix')) {
+              authors[commit.author].fixes++;
+            } else if (commit.message.toLowerCase().startsWith('feat')) {
+              authors[commit.author].feats++;
+            } else if (commit.message.toLowerCase().startsWith('test')) {
+              authors[commit.author].tests++;
+            } else if (commit.message.toLowerCase().startsWith('docs')) {
+              authors[commit.author].docs++;
+            } else if (commit.message.toLowerCase().startsWith('merge')) {
+              authors[commit.author].merges++;
+            }
+          }
+        });
+
+        const authorNames = Object.keys(authors);
+        const docsData = [];
+        const featsData = [];
+        const testsData = [];
+        const fixesData = [];
+        const mergesData = [];
+
+        // Prepara os dados para os gráficos
+        authorNames.forEach(author => {
+          docsData.push(authors[author].docs);
+          featsData.push(authors[author].feats);
+          testsData.push(authors[author].tests);
+          fixesData.push(authors[author].fixes);
+          mergesData.push(authors[author].merges);
+        });
+
+        // Gráfico de docs por autor
+        new Chart(docsChart, {
+          type: 'bar',
+          data: {
+            labels: authorNames,
+            datasets: [{
+              label: 'Docs',
+              data: docsData,
+              backgroundColor: '#3498db'
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+
+        // Gráfico de feats por autor
+        new Chart(featsChart, {
+          type: 'bar',
+          data: {
+            labels: authorNames,
+            datasets: [{
+              label: 'Feats',
+              data: featsData,
+              backgroundColor: '#2ecc71'
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+
+        // Gráfico de tests por autor
+        new Chart(testsChart, {
+          type: 'bar',
+          data: {
+            labels: authorNames,
+            datasets: [{
+              label: 'Tests',
+              data: testsData,
+              backgroundColor: '#f39c12'
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+
+        // Gráfico de fixes por autor
+        new Chart(fixesChart, {
+          type: 'bar',
+          data: {
+            labels: authorNames,
+            datasets: [{
+              label: 'Fixes',
+              data: fixesData,
+              backgroundColor: '#e74c3c'
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+
+        // Gráfico stacked de todos os tipos
+        new Chart(stackedChart, {
+          type: 'bar',
+          data: {
+            labels: authorNames,
+            datasets: [{
+              label: 'Docs',
+              data: docsData,
+              backgroundColor: '#3498db'
+            }, {
+              label: 'Feats',
+              data: featsData,
+              backgroundColor: '#2ecc71'
+            }, {
+              label: 'Tests',
+              data: testsData,
+              backgroundColor: '#f39c12'
+            }, {
+              label: 'Fixes',
+              data: fixesData,
+              backgroundColor: '#e74c3c'
+            }, {
+              label: 'Merges',
+              data: mergesData,
+              backgroundColor: '#9b59b6'
+            }]
+          },
+          options: {
+            scales: {
+              x: {
+                stacked: true,
+              },
+              y: {
+                stacked: true,
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      }
+
+      // Função para limpar os gráficos
+      function clearCharts() {
+        [docsChart, featsChart, testsChart, fixesChart, stackedChart].forEach(chart => {
+          if (chart) {
+            chart.destroy();
+          }
+        });
+      }
+
+      // Carregar nomes dos repositórios ao iniciar
+      loadRepoNames();
+
+      // Evento para carregar commits ao selecionar um repositório
+      repoSelect.addEventListener('change', function () {
+        const selectedRepo = this.value;
+        if (selectedRepo) {
+          loadCommits(selectedRepo);
+        } else {
+          clearCharts();
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
