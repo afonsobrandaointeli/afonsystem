@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <title>Dashboard de Dailies</title>
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- DataTables CSS -->
@@ -15,45 +15,6 @@
 
 <body>
   <div class="container mt-5">
-    <h1 class="mb-4">Dashboard</h1>
-
-    <div class="row">
-      <!-- Gráfico de Dailies por Turma -->
-      <div class="col-md-6">
-        <div style="max-width: 600px;">
-          <canvas id="dailyChart"></canvas>
-        </div>
-      </div>
-
-      <!-- Resumo de Dailies por Email -->
-      <div class="col-md-6">
-        <h3>Resumo de Dailies por Email</h3>
-        <div class="mb-3">
-          <label for="turmaSelect" class="form-label">Selecione a Turma:</label>
-          <select id="turmaSelect" class="form-select">
-            <!-- Opções serão preenchidas dinamicamente -->
-          </select>
-        </div>
-        <div class="mb-3">
-          <label for="grupoSelect" class="form-label">Selecione o Grupo:</label>
-          <select id="grupoSelect" class="form-select">
-            <!-- Opções serão preenchidas dinamicamente -->
-          </select>
-        </div>
-        <table id="email-summary-table" class="table table-striped table-bordered" style="display: none;">
-          <thead>
-            <tr>
-              <th>Email</th>
-              <th>Dailies</th>
-            </tr>
-          </thead>
-          <tbody id="email-summary-table-body">
-            <!-- Dados serão inseridos aqui -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
     <!-- Tabela Principal -->
     <table id="registers-table" class="table table-striped table-bordered mt-4">
       <thead>
@@ -69,6 +30,22 @@
         <!-- Dados serão inseridos aqui -->
       </tbody>
     </table>
+
+    <!-- Dropdown para selecionar o Email -->
+    <div class="mt-4">
+      <label for="emailSelect">Selecione um Email:</label>
+      <select id="emailSelect" class="form-select">
+        <!-- Opções de email serão preenchidas aqui -->
+      </select>
+    </div>
+
+    <!-- Exibição da quantidade de Dailies do Email selecionado -->
+    <div class="mt-3" id="dailiesCountContainer">
+      <h4>Quantidade de Dailies: <span id="dailiesCount">0</span></h4>
+    </div>
+
+    <!-- Gráfico de Barras de Dailies por Turma -->
+    <canvas id="dailyChart" class="mt-4"></canvas>
   </div>
 
   <!-- jQuery -->
@@ -79,74 +56,71 @@
   <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
 
-  <!-- Chart.js para gráfico de barras -->
   <script>
     async function fetchRegisters() {
       try {
         const response = await fetch('/register');
         const registers = await response.json();
-
         const tableBody = document.getElementById('registers-table-body');
+        const emailSelect = document.getElementById('emailSelect');
         tableBody.innerHTML = '';
+        emailSelect.innerHTML = ''; // Limpar dropdown de emails
 
-        // Arrays para armazenar dados de dailies por turma e por email
-        const dailyCountsByClass = {};
-        const dailyCountsByEmail = {};
+        const dailyCountsByEmail = {}; // Armazenar contagem de Dailies por Email
+        const dailyCountsByTurma = {}; // Armazenar contagem de Dailies por Turma
 
         registers.forEach(register => {
-          const row = document.createElement('tr');
-
           // Adicionar dados à tabela principal
-          const emailCell = document.createElement('td');
-          emailCell.textContent = register.email;
-          row.appendChild(emailCell);
-
-          const turmaCell = document.createElement('td');
-          turmaCell.textContent = register.turma;
-          row.appendChild(turmaCell);
-
-          const grupoCell = document.createElement('td');
-          grupoCell.textContent = register.grupo;
-          row.appendChild(grupoCell);
-
-          const impedimentoCell = document.createElement('td');
-          impedimentoCell.textContent = register.impedimento || '';
-          row.appendChild(impedimentoCell);
-
-          const groomingCell = document.createElement('td');
-          groomingCell.textContent = register.grooming || '';
-          row.appendChild(groomingCell);
-
+          const row = document.createElement('tr');
+          ['email', 'turma', 'grupo', 'impedimento', 'grooming'].forEach(field => {
+            const cell = document.createElement('td');
+            cell.textContent = register[field] || '';
+            row.appendChild(cell);
+          });
           tableBody.appendChild(row);
 
-          // Contar dailies por turma
-          if (!dailyCountsByClass[register.turma]) {
-            dailyCountsByClass[register.turma] = {};
+          // Contar Dailies por Email
+          if (!dailyCountsByEmail[register.email]) {
+            dailyCountsByEmail[register.email] = 0;
           }
+          dailyCountsByEmail[register.email]++;
 
-          // Contar dailies por email
-          const emailKey = register.email;
-          if (!dailyCountsByClass[register.turma][emailKey]) {
-            dailyCountsByClass[register.turma][emailKey] = 0;
+          // Contar Dailies por Turma
+          if (!dailyCountsByTurma[register.turma]) {
+            dailyCountsByTurma[register.turma] = 0;
           }
-          dailyCountsByClass[register.turma][emailKey]++;
+          dailyCountsByTurma[register.turma]++;
         });
 
-        // Criar o gráfico de dailies por turma
-        const classLabels = Object.keys(dailyCountsByClass);
-        const classData = classLabels.map(turma => {
-          const emails = dailyCountsByClass[turma];
-          return Object.keys(emails).length; // Número de emails únicos por turma
+        // Preencher dropdown de Emails
+        Object.keys(dailyCountsByEmail).forEach(email => {
+          const option = document.createElement('option');
+          option.value = email;
+          option.textContent = email;
+          emailSelect.appendChild(option);
         });
 
+        // Atualizar contagem de Dailies ao selecionar um Email
+        emailSelect.addEventListener('change', function () {
+          const selectedEmail = this.value;
+          document.getElementById('dailiesCount').textContent = dailyCountsByEmail[selectedEmail];
+        });
+
+        // Inicializar contagem de Dailies para o primeiro Email
+        if (Object.keys(dailyCountsByEmail).length > 0) {
+          emailSelect.value = Object.keys(dailyCountsByEmail)[0];
+          document.getElementById('dailiesCount').textContent = dailyCountsByEmail[emailSelect.value];
+        }
+
+        // Criar gráfico de Dailies por Turma
         const ctx = document.getElementById('dailyChart').getContext('2d');
         new Chart(ctx, {
           type: 'bar',
           data: {
-            labels: classLabels,
+            labels: Object.keys(dailyCountsByTurma),
             datasets: [{
               label: 'Dailies por Turma',
-              data: classData,
+              data: Object.values(dailyCountsByTurma),
               backgroundColor: 'rgba(54, 162, 235, 0.2)',
               borderColor: 'rgba(54, 162, 235, 1)',
               borderWidth: 1
@@ -161,76 +135,13 @@
             },
             plugins: {
               legend: {
-                display: false
+                display: true
               }
             }
           }
         });
 
-        // Preencher o dropdown de turmas
-        const turmaSelect = document.getElementById('turmaSelect');
-        turmaSelect.innerHTML = '';
-        classLabels.forEach(turma => {
-          const option = document.createElement('option');
-          option.value = turma;
-          option.textContent = turma;
-          turmaSelect.appendChild(option);
-        });
-
-        // Função para preencher o dropdown de grupos baseado na turma selecionada
-        function populateGrupoDropdown(selectedTurma) {
-          const grupoSelect = document.getElementById('grupoSelect');
-          grupoSelect.innerHTML = '';
-
-          // Obter os grupos únicos para a turma selecionada
-          const grupos = Object.keys(dailyCountsByClass[selectedTurma] || {});
-
-          grupos.forEach(grupo => {
-            const option = document.createElement('option');
-            option.value = grupo;
-            option.textContent = grupo;
-            grupoSelect.appendChild(option);
-          });
-
-          // Mostrar a tabela de resumo ao selecionar um grupo
-          grupoSelect.addEventListener('change', function () {
-            const selectedGrupo = grupoSelect.value;
-            showEmailSummary(selectedTurma, selectedGrupo);
-          });
-        }
-
-        // Mostrar resumo de emails para a turma e grupo selecionados
-        function showEmailSummary(turma, grupo) {
-          const emailSummaryTable = document.getElementById('email-summary-table');
-          const emailSummaryTableBody = document.getElementById('email-summary-table-body');
-          emailSummaryTableBody.innerHTML = '';
-
-          const emails = dailyCountsByClass[turma] || {};
-          let emailsToShow = Object.keys(emails).map(email => ({ email, dailies: emails[email] }));
-
-          if (grupo !== 'Todos') {
-            emailsToShow = emailsToShow.filter(({ email }) => emails[email] === grupo);
-          }
-
-          emailsToShow.forEach(({ email, dailies }) => {
-            const row = document.createElement('tr');
-
-            const emailCell = document.createElement('td');
-            emailCell.textContent = email;
-            row.appendChild(emailCell);
-
-            const dailiesCell = document.createElement('td');
-            dailiesCell.textContent = dailies;
-            row.appendChild(dailiesCell);
-
-            emailSummaryTableBody.appendChild(row);
-          });
-
-          // Exibir a tabela de resumo
-          emailSummaryTable.style.display = emailsToShow.length > 0 ? 'table' : 'none';
-        }
-
-        // Inicializa DataTables com paginação na tabela principal
+        // Inicializa DataTables na tabela principal
         $('#registers-table').DataTable({
           language: {
             url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/Portuguese-Brasil.json'
@@ -239,24 +150,13 @@
           lengthMenu: [5, 10, 25, 50], // Opções de quantidade de registros por página
           pageLength: 10 // Registros por página inicial
         });
-
-        // Preencher o dropdown de grupos ao selecionar uma turma
-        turmaSelect.addEventListener('change', function () {
-          const selectedTurma = turmaSelect.value;
-          populateGrupoDropdown(selectedTurma);
-        });
-
-        // Inicializa o dropdown de grupos com a primeira turma disponível
-        if (classLabels.length > 0) {
-          populateGrupoDropdown(classLabels[0]);
-        }
       } catch (error) {
         console.error('Erro ao buscar os registros:', error);
       }
     }
 
-    // Chama a função para buscar e exibir os registros quando a página carrega
     window.onload = fetchRegisters;
   </script>
 </body>
+
 </html>
