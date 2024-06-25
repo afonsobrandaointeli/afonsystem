@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Normas e Procedimentos - GitFlow</title>
+  <!-- Bootstrap CSS para estilização -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="container mt-5">
+    <h1 class="mb-3">Normas e Procedimentos para o Módulo</h1>
+    
+    <h2>Introdução ao GitFlow</h2>
+    <p>O GitFlow é uma metodologia baseada no uso de branches para gerenciar o desenvolvimento de software de maneira mais eficiente e organizada. Essencial para trabalhar em equipe, o GitFlow ajuda a separar novas funcionalidades, correções de bugs e preparações para lançamento de produto em diferentes branches, facilitando a colaboração e o controle de versões.</p>
+
+    <h2>Regras para Commits</h2>
+    <ul>
+      <li><strong>Commits Convencionais:</strong> Todos os alunos devem utilizar o formato de commits convencionais, que inclui prefixos como <code>feat:</code>, <code>fix:</code>, <code>docs:</code>, entre outros, para descrever claramente a natureza da mudança realizada.</li>
+      <li><strong>Proibição de Commits na Main:</strong> É proibido fazer commits diretamente na branch <code>main</code>. Todas as mudanças devem ser realizadas em branches secundárias e incorporadas à <code>main</code> através de pull requests.</li>
+    </ul>
+
+    <h2>Uso do Husky para Garantir Padrões</h2>
+    <p>O Husky é uma ferramenta que permite a configuração de ganchos Git (Git hooks) para automatizar a verificação de padrões antes de commits e pushs. Configurando o Husky, é possível impedir que commits e pull requests que não atendam aos padrões especificados sejam aceitos, garantindo a qualidade e consistência do código.</p>
+    
+    <h2>Template para Pull Requests</h2>
+    <p>Abaixo está um template básico para pull requests que deve ser utilizado para garantir que todas as solicitações sejam devidamente documentadas e vinculadas aos cards do Kanban apenas pelo número:</p>
+    <pre>
+      #### Descrição
+      Descreva aqui as mudanças que você realizou.
+
+      #### Número do Card no Kanban
+      #123
+
+      ### Tipo de alteração
+      - [ ] Nova feature
+      - [ ] Correção de bug
+      - [ ] Documentação
+      - [ ] Outros (especifique)
+    </pre>
+
+  </div>
+
+  <!-- Bootstrap JS para funcionalidades básicas -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

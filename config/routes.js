@@ -1,5 +1,6 @@
 module.exports.routes = {
-  "/": { view: "pages/register" },
+  "/": { view: "pages/standards" },
+  "/daily": { view: "pages/register" },
   "/data": { view: "pages/dash" },
   "/commits": { view: "pages/commits" },
   "/prs": { view: "pages/prs" },
