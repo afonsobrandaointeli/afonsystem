@@ -23,6 +23,14 @@
       </select>
     </div>
 
+    <!-- Dropdown para seleção de branch -->
+    <div class="mb-3">
+      <label for="branchSelect" class="form-label">Selecione uma branch:</label>
+      <select id="branchSelect" class="form-select">
+        <option value="" selected disabled>Selecione uma branch...</option>
+      </select>
+    </div>
+
     <!-- Gráficos -->
     <div class="row">
       <div class="col-md-6 mb-4">
@@ -87,7 +95,6 @@
       <button class="btn btn-outline-primary" type="button" id="filterButton">Filtrar</button>
     </div>
 
-
     <div class="table-responsive mb-5">
       <table id="commitTable" class="table table-striped table-bordered">
         <thead class="table-dark">
@@ -102,6 +109,7 @@
         </tbody>
       </table>
     </div>
+  </div>
 
   <!-- Bootstrap JS (opcional, se necessário) -->
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
@@ -109,6 +117,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const repoSelect = document.getElementById('repoSelect');
+      const branchSelect = document.getElementById('branchSelect');
       const docsChart = document.getElementById('docsChart');
       const featsChart = document.getElementById('featsChart');
       const testsChart = document.getElementById('testsChart');
@@ -140,50 +149,37 @@
           const authorCell = row.querySelector('td:nth-child(3)');
           const author = authorCell.textContent.trim().toLowerCase();
 
-          // Verifica se a mensagem e autor correspondem aos critérios de filtro
           const messageMatch = messageText.includes(searchText) || searchText === '';
           const authorMatch = author.includes(authorText) || authorText === '';
 
           if (messageMatch && authorMatch) {
-            row.style.display = ''; // Exibe a linha se todos os critérios forem correspondidos
+            row.style.display = '';
           } else {
-            row.style.display = 'none'; // Oculta a linha se algum critério não for correspondido
+            row.style.display = 'none';
           }
         });
       }
 
-
-
-      // Função para verificar se a data está no intervalo especificado
-      function isDateInRange(commitDate, filterDate) {
-        if (!filterDate) return true; // Retorna verdadeiro se nenhum filtro de data estiver especificado
-
-        const commitDateObj = new Date(commitDate);
-        const filterDateObj = new Date(filterDate);
-
-        // Compara apenas a data, ignorando a hora, minutos, segundos e milissegundos
-        return (
-          commitDateObj.getFullYear() === filterDateObj.getFullYear() &&
-          commitDateObj.getMonth() === filterDateObj.getMonth() &&
-          commitDateObj.getDate() === filterDateObj.getDate()
-        );
+      function sortRepoNames(repoNames) {
+        repoNames.sort((a, b) => {
+          if (a === '2A') return -1;  // Coloca '2A' no início
+          if (b === '2A') return 1;
+          return a.localeCompare(b);  // Ordenação alfabética dos demais
+        });
       }
 
-
-
-
-      // Função para carregar os repositórios disponíveis
       async function loadRepoNames() {
         try {
           const response = await fetch('/repo_names');
           const data = await response.json();
 
           if (data.rows && data.rows.length > 0) {
-            const repoNames = data.rows.map(row => row.repo_name);
+            let repoNames = data.rows.map(row => row.repo_name);
+            
+            // Ordenar repositórios com a função personalizada
+            sortRepoNames(repoNames);
 
-            // Atualiza a lista de repositórios no dropdown
-            repoSelect.innerHTML = ''; // Limpa as opções existentes
-
+            repoSelect.innerHTML = '';
             repoNames.forEach(repo => {
               const option = document.createElement('option');
               option.textContent = repo;
@@ -198,11 +194,42 @@
         }
       }
 
-      // Função para carregar os commits para um repositório específico
-      async function loadCommits(repoName) {
+
+      async function loadBranchNames(repoName) {
         try {
           const headers = new Headers();
-          headers.append('repo_name', repoName); // Passa o repo_name como cabeçalho
+          headers.append('repo_name', repoName);
+
+          const response = await fetch('/getbranches', {
+            method: 'GET',
+            headers: headers
+          });
+          const data = await response.json();
+
+          branchSelect.innerHTML = '';
+
+          if (data.rows && data.rows.length > 0) {
+            const branchNames = data.rows.map(row => row.branch_name);
+
+            branchNames.forEach(branch => {
+              const option = document.createElement('option');
+              option.textContent = branch;
+              option.value = branch;
+              branchSelect.appendChild(option);
+            });
+          } else {
+            console.log('Nenhuma branch encontrada para este repositório.');
+          }
+        } catch (error) {
+          console.error('Erro ao carregar branches:', error);
+        }
+      }
+
+      async function loadCommits(repoName, branchName) {
+        try {
+          const headers = new Headers();
+          headers.append('repo_name', repoName);
+          headers.append('branch_name', branchName);
 
           const response = await fetch('/getcommits', {
             method: 'GET',
@@ -211,10 +238,9 @@
           const data = await response.json();
 
           const commitTableBody = document.querySelector('#commitTable tbody');
-          commitTableBody.innerHTML = ''; // Limpa as linhas existentes
+          commitTableBody.innerHTML = '';
 
           if (data.rows && data.rows.length > 0) {
-            // Atualizar KPIs
             const featsCount = data.rows.filter(commit => commit.message.toLowerCase().startsWith('feat')).length;
             const mergesCount = data.rows.filter(commit => commit.message.toLowerCase().startsWith('merge')).length;
             const docsCount = data.rows.filter(commit => commit.message.toLowerCase().startsWith('docs')).length;
@@ -225,22 +251,19 @@
             document.getElementById('docsKpi').textContent = docsCount.toString();
             document.getElementById('commitsKpi').textContent = commitsCount.toString();
 
-            // Adicionar linhas de commits na tabela
             data.rows.forEach(commit => {
               const row = document.createElement('tr');
               row.innerHTML = `
-              <td>${commit.message}</td>
-              <td>${new Date(commit.date).toLocaleDateString('pt-BR')}</td>
-              <td>${commit.author}</td>
-            `;
+                <td>${commit.message}</td>
+                <td>${new Date(commit.date).toLocaleDateString('pt-BR')}</td>
+                <td>${commit.author}</td>
+              `;
               commitTableBody.appendChild(row);
             });
 
-            // Gerar gráficos
             generateCharts(data.rows);
           } else {
-            console.log('Nenhum commit encontrado para este repositório.');
-            // Limpar gráficos caso não haja commits
+            console.log('Nenhum commit encontrado para esta branch.');
             clearCharts();
           }
         } catch (error) {
@@ -252,7 +275,6 @@
       function generateCharts(commits) {
         const authors = {};
 
-        // Inicializa o objeto de autores
         commits.forEach(commit => {
           if (!authors[commit.author]) {
             authors[commit.author] = {
@@ -260,12 +282,11 @@
               feats: 0,
               tests: 0,
               fixes: 0,
-              merges: 0  // Inicializa o contador de merges
+              merges: 0
             };
           }
         });
 
-        // Conta o número de commits por tipo para cada autor
         commits.forEach(commit => {
           if (authors[commit.author]) {
             if (commit.message.toLowerCase().startsWith('fix')) {
@@ -289,7 +310,6 @@
         const fixesData = [];
         const mergesData = [];
 
-        // Prepara os dados para os gráficos
         authorNames.forEach(author => {
           docsData.push(authors[author].docs);
           featsData.push(authors[author].feats);
@@ -298,7 +318,6 @@
           mergesData.push(authors[author].merges);
         });
 
-        // Gráfico de docs por autor
         new Chart(docsChart, {
           type: 'bar',
           data: {
@@ -318,7 +337,6 @@
           }
         });
 
-        // Gráfico de feats por autor
         new Chart(featsChart, {
           type: 'bar',
           data: {
@@ -338,7 +356,6 @@
           }
         });
 
-        // Gráfico de tests por autor
         new Chart(testsChart, {
           type: 'bar',
           data: {
@@ -358,7 +375,6 @@
           }
         });
 
-        // Gráfico de fixes por autor
         new Chart(fixesChart, {
           type: 'bar',
           data: {
@@ -378,7 +394,6 @@
           }
         });
 
-        // Gráfico stacked de todos os tipos
         new Chart(stackedChart, {
           type: 'bar',
           data: {
@@ -431,11 +446,22 @@
       // Carregar nomes dos repositórios ao iniciar
       loadRepoNames();
 
-      // Evento para carregar commits ao selecionar um repositório
+      // Evento para carregar branches ao selecionar um repositório
       repoSelect.addEventListener('change', function () {
         const selectedRepo = this.value;
         if (selectedRepo) {
-          loadCommits(selectedRepo);
+          loadBranchNames(selectedRepo);
+        } else {
+          clearCharts();
+        }
+      });
+
+      // Evento para carregar commits ao selecionar uma branch
+      branchSelect.addEventListener('change', function () {
+        const selectedRepo = repoSelect.value;
+        const selectedBranch = this.value;
+        if (selectedRepo && selectedBranch) {
+          loadCommits(selectedRepo, selectedBranch);
         } else {
           clearCharts();
         }
