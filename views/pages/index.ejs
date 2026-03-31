@@ -1,0 +1,213 @@
+<%- include('../partials/header') %>
+
+<!-- Sprint Descriptor Banner -->
+<% if (sprintDescriptor) { %>
+<div class="alert alert-info mb-4">
+  <div class="row align-items-center">
+    <div class="col">
+      <strong>Active Sprint Baseline (SCM)</strong> &mdash;
+      <%= sprintDescriptor.sprint_id %>: <%= sprintDescriptor.title %>
+      &bull; Partner: <%= sprintDescriptor.partner %>
+      &bull; <%= sprintDescriptor.start_date %> → <%= sprintDescriptor.end_date %>
+      &bull; <%= sprintDescriptor.working_days %> working days
+    </div>
+    <div class="col-auto">
+      <span class="badge bg-primary">M<%= sprintDescriptor.module.replace('M','') %> Sprint <%= sprintDescriptor.sprint_number %></span>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<!-- Filters -->
+<form method="GET" action="/" class="row g-2 mb-4" id="filterForm">
+  <div class="col-md-4">
+    <select name="project_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All Projects</option>
+      <% projects.forEach(p => { %>
+        <option value="<%= p.project_id %>" <%= query.project_id == p.project_id ? 'selected' : '' %>>
+          <%= p.name %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="col-md-2">
+    <input type="date" name="from" class="form-control" value="<%= query.from || '' %>" placeholder="From">
+  </div>
+  <div class="col-md-2">
+    <input type="date" name="to" class="form-control" value="<%= query.to || '' %>" placeholder="To">
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-primary w-100">Filter</button>
+  </div>
+  <div class="col-md-2">
+    <a href="/" class="btn btn-outline-secondary w-100">Reset</a>
+  </div>
+</form>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="fs-2 fw-bold text-primary"><%= counts.projects %></div>
+        <div class="text-muted small">Projects (Teams)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="fs-2 fw-bold text-success"><%= counts.commits %></div>
+        <div class="text-muted small">Commits (Config Items)</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="fs-2 fw-bold text-info"><%= counts.mrs %></div>
+        <div class="text-muted small">Merge Requests</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="fs-2 fw-bold text-warning"><%= counts.issues %></div>
+        <div class="text-muted small">Issues</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCM Conformance Summary Table (CEP results) -->
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong><i class="bi bi-shield-check me-2"></i>SCM Conformance Distance — Daily CEP Results</strong>
+    <small class="text-muted">Sprint M7-S3 · Evaluated at Day <strong id="sprintDayBadge">—</strong></small>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Team / Project</th>
+          <th class="text-center">Score</th>
+          <th class="text-center">Trend</th>
+          <th class="text-center">Sprint Day</th>
+          <th>CEP Patterns Detected</th>
+          <th>Weak Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% conformanceSummary.forEach(c => { %>
+        <tr>
+          <td>
+            <a href="/projects/<%= c.project_id %>" class="fw-bold text-decoration-none">
+              <%= c.name.replace(' — M7 Sprint 3','') %>
+            </a>
+            <br><small class="text-muted"><%= c.pattern %></small>
+          </td>
+          <td class="text-center">
+            <% const pct = Math.round((c.score || 0) * 100); %>
+            <span class="badge fs-6 bg-<%= pct >= 70 ? 'success' : pct >= 40 ? 'warning' : 'danger' %>">
+              <%= pct %>%
+            </span>
+          </td>
+          <td class="text-center">
+            <% const icons = { improving: '↑', stable: '→', deteriorating: '↓' }; %>
+            <% const colors = { improving: 'text-success', stable: 'text-secondary', deteriorating: 'text-danger' }; %>
+            <span class="<%= colors[c.trend] || '' %> fw-bold"><%= icons[c.trend] || '—' %> <%= c.trend || '—' %></span>
+          </td>
+          <td class="text-center"><%= c.sprint_day || '—' %></td>
+          <td>
+            <% (c.patterns || []).forEach(pt => { %>
+              <span class="badge bg-<%= pt.includes('CRITICAL') || pt === 'INACTIVE_MEMBER' || pt === 'LOW_CADENCE' ? 'danger' : 'warning text-dark' %> me-1">
+                <%= pt %>
+              </span>
+            <% }) %>
+          </td>
+          <td class="small text-danger">
+            <% (c.weak_points || []).slice(0, 2).forEach(wp => { %>
+              <div>• <%= wp.replace('[CRITICAL] ','').replace('[WARNING] ','') %></div>
+            <% }) %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Commits per Student (SCM Event Distribution)</div>
+      <div class="card-body"><canvas id="commitsPerStudentChart" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Commits over Time (CEP: Temporal Distribution)</div>
+      <div class="card-body"><canvas id="commitsOverTimeChart" height="220"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">Code Churn per Student</div>
+      <div class="card-body"><canvas id="linesPerStudentChart" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">MR Status (Change Control)</div>
+      <div class="card-body"><canvas id="mrStatusChart" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">Issue Status (Requirement Traceability)</div>
+      <div class="card-body"><canvas id="issueStatusChart" height="220"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- Conventional commit breakdown -->
+<% if (Object.keys(conventionalTypes).length > 0) { %>
+<div class="card mb-4">
+  <div class="card-header">Conventional Commit Types (Commit Quality SCM Metric)</div>
+  <div class="card-body">
+    <div class="d-flex flex-wrap gap-2">
+      <% Object.entries(conventionalTypes).sort((a,b)=>b[1]-a[1]).forEach(([type, count]) => { %>
+        <span class="badge bg-secondary fs-6"><%= type %>: <%= count %></span>
+      <% }) %>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<!-- Project list -->
+<div class="card mb-4">
+  <div class="card-header">Project List</div>
+  <div class="list-group list-group-flush">
+    <% projects.forEach(p => { %>
+      <a href="/projects/<%= p.project_id %>" class="list-group-item list-group-item-action">
+        <div class="d-flex justify-content-between">
+          <span class="fw-bold"><%= p.name %></span>
+          <small class="text-muted"><%= p.path_with_namespace %></small>
+        </div>
+        <small class="text-muted"><%= p.description %></small>
+      </a>
+    <% }) %>
+  </div>
+</div>
+
+<script>
+  // Pass filter query to chart fetcher
+  const filterQuery = '<%= new URLSearchParams(query).toString() %>';
+</script>
+
+<%- include('../partials/footer') %>

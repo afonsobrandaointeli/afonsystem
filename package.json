@@ -1,17 +1,25 @@
 {
-  "name": "afonsystem-web",
+  "name": "afonsystem",
   "version": "1.0.0",
-  "description": "GitLab analytics dashboard",
+  "description": "PBL Teacher-Support System using CEP and Digital Twin Engineering",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "node --watch app.js"
+    "dev": "nodemon app.js",
+    "seed": "node seeds/simulation-data-generator.js",
+    "test": "node tests/test-structural-checker.js && node tests/test-diff-analyzer.js && node tests/test-semantic-analyzer.js",
+    "test:structural": "node tests/test-structural-checker.js",
+    "test:diff": "node tests/test-diff-analyzer.js",
+    "test:semantic": "node tests/test-semantic-analyzer.js"
   },
   "dependencies": {
-    "dotenv": "^16.4.0",
+    "@anthropic-ai/sdk": "^0.80.0",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
     "mongodb": "^6.3.0",
     "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
   }
 }
